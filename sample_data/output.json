@@ -1,0 +1,79 @@
+{
+  "success": true,
+  "message": "Processed 4 listings. 4 successful, 0 failed.",
+  "listings": [
+    {
+      "id": "marketplace_001",
+      "title": "2019 Honda Civic - Excellent Condition",
+      "description": "Well-maintained Honda Civic with low mileage. Perfect for daily commuting.",
+      "price": "$18,500",
+      "location": "San Francisco, CA",
+      "images": [
+        "https://storage.googleapis.com/your-firebase-bucket/marketplace_images/marketplace_001_1_abc12345.jpg",
+        "https://storage.googleapis.com/your-firebase-bucket/marketplace_images/marketplace_001_2_def67890.jpg",
+        "https://storage.googleapis.com/your-firebase-bucket/marketplace_images/marketplace_001_3_ghi13579.jpg"
+      ],
+      "seller": {
+        "name": "John Doe",
+        "profile_url": "https://facebook.com/john.doe"
+      },
+      "posted_date": "2024-01-15",
+      "category": "Vehicles"
+    },
+    {
+      "id": "marketplace_002",
+      "title": "Modern Sofa Set - Like New",
+      "description": "Beautiful 3-piece sofa set in excellent condition. Moving sale!",
+      "price": "$800",
+      "location": "Los Angeles, CA",
+      "image_urls": [
+        "https://storage.googleapis.com/your-firebase-bucket/marketplace_images/marketplace_002_1_jkl24680.jpg",
+        "https://storage.googleapis.com/your-firebase-bucket/marketplace_images/marketplace_002_2_mno97531.jpg"
+      ],
+      "seller": {
+        "name": "Jane Smith",
+        "profile_url": "https://facebook.com/jane.smith"
+      },
+      "posted_date": "2024-01-10",
+      "category": "Home & Garden"
+    },
+    {
+      "id": "marketplace_003",
+      "title": "iPhone 14 Pro - Unlocked",
+      "description": "iPhone 14 Pro in space black, 256GB, unlocked to all carriers.",
+      "price": "$900",
+      "location": "New York, NY",
+      "photos": [
+        "https://storage.googleapis.com/your-firebase-bucket/marketplace_images/marketplace_003_1_pqr86420.jpg"
+      ],
+      "seller": {
+        "name": "Mike Johnson",
+        "profile_url": "https://facebook.com/mike.johnson"
+      },
+      "posted_date": "2024-01-12",
+      "category": "Electronics"
+    },
+    {
+      "id": "marketplace_004",
+      "title": "Mountain Bike - Trek",
+      "description": "Trek mountain bike in great condition. Perfect for trails and city riding.",
+      "price": "$450",
+      "location": "Denver, CO",
+      "pictures": [
+        "https://storage.googleapis.com/your-firebase-bucket/marketplace_images/marketplace_004_1_stu75319.jpg",
+        "https://storage.googleapis.com/your-firebase-bucket/marketplace_images/marketplace_004_2_vwx64208.jpg"
+      ],
+      "seller": {
+        "name": "Sarah Wilson",
+        "profile_url": "https://facebook.com/sarah.wilson"
+      },
+      "posted_date": "2024-01-08",
+      "category": "Sports & Outdoors"
+    }
+  ],
+  "stats": {
+    "total_listings": 4,
+    "successful": 4,
+    "failed": 0
+  }
+}
