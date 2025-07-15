@@ -1,3 +1,4 @@
 /.env.template
 /.venv
 firebase-credentials.json
+.env

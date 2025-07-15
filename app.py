@@ -96,13 +96,52 @@ def get_file_extension(url, content_type=None):
     # Default fallback
     return 'jpg'
 
+def extract_image_urls_from_attachments(attachments):
+    """Extract image URLs from Facebook attachments structure."""
+    image_urls = []
+    
+    for attachment in attachments:
+        # Check different possible image URL fields in Facebook attachments
+        image_url = None
+        
+        # Try different possible fields for image URLs
+        if 'photo_image' in attachment and 'uri' in attachment['photo_image']:
+            image_url = attachment['photo_image']['uri']
+        elif 'image' in attachment and 'uri' in attachment['image']:
+            image_url = attachment['image']['uri']
+        elif 'thumbnail' in attachment:
+            image_url = attachment['thumbnail']
+        elif 'uri' in attachment:
+            image_url = attachment['uri']
+        
+        if image_url and is_valid_url(image_url):
+            image_urls.append(image_url)
+            logger.info(f"Found image URL: {image_url}")
+        else:
+            logger.warning(f"No valid image URL found in attachment: {attachment}")
+    
+    return image_urls
+
 def process_listing_images(listing):
     """Process all images in a single listing."""
     processed_listing = listing.copy()
     
-    # Handle different possible image field names
-    image_fields = ['images', 'image_urls', 'photos', 'pictures']
+    # Note: Local images directory not needed when using Firebase
+    # Create images directory if it doesn't exist for temporary storage
+    # images_dir = "images"
+    # if not os.path.exists(images_dir):
+    #     os.makedirs(images_dir)
     
+    all_image_urls = []
+    
+    # Handle Facebook attachments structure
+    if 'attachments' in processed_listing and processed_listing['attachments']:
+        logger.info(f"Processing attachments for listing {processed_listing.get('id', 'unknown')}")
+        attachment_urls = extract_image_urls_from_attachments(processed_listing['attachments'])
+        all_image_urls.extend(attachment_urls)
+    
+    # Handle traditional image fields
+    image_fields = ['images', 'image_urls', 'photos', 'pictures']
     for field in image_fields:
         if field in processed_listing and processed_listing[field]:
             images = processed_listing[field]
@@ -110,45 +149,45 @@ def process_listing_images(listing):
             # Handle both list of URLs and single URL
             if isinstance(images, str):
                 images = [images]
-            elif not isinstance(images, list):
+            elif isinstance(images, list):
+                all_image_urls.extend([img for img in images if is_valid_url(img)])
+            else:
                 logger.warning(f"Unexpected image field format in listing {processed_listing.get('id', 'unknown')}")
-                continue
+    
+    if not all_image_urls:
+        logger.warning(f"No valid image URLs found in listing {processed_listing.get('id', 'unknown')}")
+        return processed_listing
+    
+    logger.info(f"Found {len(all_image_urls)} image URLs to process")
+    
+    new_image_urls = []
+    
+    for i, image_url in enumerate(all_image_urls):
+        try:
+            # Download image
+            logger.info(f"Downloading image {i+1}/{len(all_image_urls)} from listing {processed_listing.get('id', 'unknown')}")
+            image_data = download_image(image_url)
             
-            new_image_urls = []
+            # Generate unique filename
+            listing_id = processed_listing.get('id', processed_listing.get('legacyId', str(uuid.uuid4())))
+            extension = get_file_extension(image_url)
+            filename = f"marketplace_images_{listing_id}_{i+1}_{uuid.uuid4().hex[:8]}.{extension}"
             
-            for i, image_url in enumerate(images):
-                if not image_url or not is_valid_url(image_url):
-                    logger.warning(f"Invalid URL in listing {processed_listing.get('id', 'unknown')}: {image_url}")
-                    continue
-                
-                try:
-                    # Download image
-                    logger.info(f"Downloading image {i+1}/{len(images)} from listing {processed_listing.get('id', 'unknown')}")
-                    image_data = download_image(image_url)
-                    
-                    # Generate unique filename
-                    listing_id = processed_listing.get('id', str(uuid.uuid4()))
-                    extension = get_file_extension(image_url)
-                    filename = f"marketplace_images/{listing_id}_{i+1}_{uuid.uuid4().hex[:8]}.{extension}"
-                    
-                    # Upload to Firebase
-                    firebase_url = upload_image_to_firebase(image_data, filename)
-                    new_image_urls.append(firebase_url)
-                    
-                    logger.info(f"Successfully processed image {i+1}/{len(images)} for listing {processed_listing.get('id', 'unknown')}")
-                
-                except Exception as e:
-                    logger.error(f"Failed to process image {image_url} in listing {processed_listing.get('id', 'unknown')}: {str(e)}")
-                    # Optionally keep original URL if processing fails
-                    # new_image_urls.append(image_url)
-                    continue
+            # Upload to Firebase Storage
+            firebase_url = upload_image_to_firebase(image_data, filename)
+            new_image_urls.append(firebase_url)
             
-            # Update the field with new URLs
-            if new_image_urls:
-                if isinstance(processed_listing[field], str):
-                    processed_listing[field] = new_image_urls[0] if new_image_urls else processed_listing[field]
-                else:
-                    processed_listing[field] = new_image_urls
+            logger.info(f"Successfully processed image {i+1}/{len(all_image_urls)} for listing {processed_listing.get('id', 'unknown')}")
+        
+        except Exception as e:
+            logger.error(f"Failed to process image {image_url} in listing {processed_listing.get('id', 'unknown')}: {str(e)}")
+            continue
+    
+    # Update the listing with new image URLs
+    if new_image_urls:
+        # Add a new field with processed images
+        processed_listing['processed_images'] = new_image_urls
+        logger.info(f"Added {len(new_image_urls)} processed images to listing {processed_listing.get('id', 'unknown')}")
     
     return processed_listing
 
@@ -181,6 +220,7 @@ def upload_images():
         processed_listings = []
         successful_count = 0
         failed_count = 0
+        total_images_processed = 0
         
         for i, listing in enumerate(listings):
             try:
@@ -188,6 +228,10 @@ def upload_images():
                 processed_listing = process_listing_images(listing)
                 processed_listings.append(processed_listing)
                 successful_count += 1
+                
+                # Count processed images
+                if 'processed_images' in processed_listing:
+                    total_images_processed += len(processed_listing['processed_images'])
                 
             except Exception as e:
                 logger.error(f"Failed to process listing {i+1}: {str(e)}")
@@ -198,16 +242,17 @@ def upload_images():
         # Return results
         response = {
             'success': True,
-            'message': f'Processed {len(listings)} listings. {successful_count} successful, {failed_count} failed.',
+            'message': f'Processed {len(listings)} listings. {successful_count} successful, {failed_count} failed. {total_images_processed} images downloaded.',
             'listings': processed_listings,
             'stats': {
                 'total_listings': len(listings),
                 'successful': successful_count,
-                'failed': failed_count
+                'failed': failed_count,
+                'total_images_processed': total_images_processed
             }
         }
         
-        logger.info(f"Completed processing. {successful_count} successful, {failed_count} failed.")
+        logger.info(f"Completed processing. {successful_count} successful, {failed_count} failed, {total_images_processed} images processed.")
         return jsonify(response), 200
     
     except Exception as e:

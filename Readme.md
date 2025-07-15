@@ -393,5 +393,3 @@ For issues and questions:
 4. Open an issue on the project repository
 
 ---
-
-**Made with ❤️ for solving Facebook Marketplace image URL problems!**

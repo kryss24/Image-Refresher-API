@@ -215,6 +215,28 @@ def test_with_minimal_data():
         print(f"❌ Minimal data test failed: {str(e)}")
         return False
 
+def test_from_file_json():
+    # Charger le fichier JSON
+    with open('sample_data/input.json', 'r', encoding='utf-8') as f:
+        listings = json.load(f)
+
+    # Envoyer à l’API Flask
+    response = requests.post(f'{API_BASE_URL}/upload-images', json=listings)
+
+    # Vérifier la réponse
+    if response.ok:
+        result = response.json()
+        print("✅ Traitement réussi :", result['message'])
+        
+        # Sauvegarder la nouvelle version avec les images mises à jour
+        with open('output.json', 'w', encoding='utf-8') as f:
+            json.dump(result['listings'], f, indent=2, ensure_ascii=False)
+        print("✅ Fichier output.json généré avec succès")
+        return True
+    else:
+        print("❌ Erreur :", response.status_code, response.text)
+        return False
+
 def main():
     """Main test runner."""
     print("🚀 Starting Facebook Marketplace Image Refresher API Tests")
@@ -260,6 +282,18 @@ def main():
     print()
     print("=" * 60)
     print(f"🏁 Tests completed in {end_time - start_time:.2f} seconds")
+    
+    if success:
+        print("✅ Main functionality test passed!")
+        print("🎉 API is working correctly")
+    else:
+        print("❌ Some tests failed - check the output above")
+        print("💡 Make sure Firebase credentials are configured correctly")
+    
+    print("🚀 Starting Facebook Marketplace Image Refresher API Tests")
+    print("=" * 60)
+    
+    sucess = test_from_file_json()
     
     if success:
         print("✅ Main functionality test passed!")
