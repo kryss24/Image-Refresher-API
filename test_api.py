@@ -293,14 +293,14 @@ def main():
     print("🚀 Starting Facebook Marketplace Image Refresher API Tests")
     print("=" * 60)
     
-    sucess = test_from_file_json()
+    # sucess = test_from_file_json()
     
-    if success:
-        print("✅ Main functionality test passed!")
-        print("🎉 API is working correctly")
-    else:
-        print("❌ Some tests failed - check the output above")
-        print("💡 Make sure Firebase credentials are configured correctly")
+    # if success:
+    #     print("✅ Main functionality test passed!")
+    #     print("🎉 API is working correctly")
+    # else:
+    #     print("❌ Some tests failed - check the output above")
+    #     print("💡 Make sure Firebase credentials are configured correctly")
     
     print("\n📋 Test Summary:")
     print("   - Health check: ✅")

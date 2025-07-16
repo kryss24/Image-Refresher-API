@@ -21,7 +21,7 @@ class FirebaseStorageManager:
                     raise Exception("Firebase credentials not found")
                 print(cred)
                 firebase_admin.initialize_app(cred, {
-                    'storageBucket': "subleasa-7a3de.firebasestorage.app.appspot.com"
+                    'storageBucket': "subleasa-7a3de.firebasestorage.app"
                 })
 
             self.bucket = storage.bucket()
