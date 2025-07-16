@@ -70,6 +70,9 @@ def get_firebase_manager():
     return _firebase_manager
 
 def upload_image_to_firebase(image_data, filename, content_type=None):
+    import filetype
+    kind = filetype.guess(image_data)
+    content_type = kind.mime if kind else 'application/octet-stream'
     return get_firebase_manager().upload_image(image_data, filename, content_type)
 
 def delete_image_from_firebase(filename):
