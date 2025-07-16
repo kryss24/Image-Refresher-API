@@ -174,7 +174,7 @@ def process_listing_images(listing):
             filename = f"marketplace_images_{listing_id}_{i+1}_{uuid.uuid4().hex[:8]}.{extension}"
             
             # Upload to Firebase Storage
-            firebase_url = upload_image_to_firebase(image_data, filename)
+            firebase_url = upload_image_to_firebase(image_data, f"TestingAPI/{filename}")
             new_image_urls.append(firebase_url)
             
             logger.info(f"Successfully processed image {i+1}/{len(all_image_urls)} for listing {processed_listing.get('id', 'unknown')}")
