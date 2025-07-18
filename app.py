@@ -109,17 +109,17 @@ def extract_image_urls_from_attachments(attachments):
             image_url = attachment['photo_image']['uri']
         elif 'image' in attachment and 'uri' in attachment['image']:
             image_url = attachment['image']['uri']
-        elif 'thumbnail' in attachment:
-            image_url = attachment['thumbnail']
+       # elif 'thumbnail' in attachment:
+            #image_url = attachment['thumbnail'] No need for Thumbnails they dont scale correctly anyways
         elif 'uri' in attachment:
             image_url = attachment['uri']
         
         if image_url and is_valid_url(image_url):
             image_urls.append(image_url)
-            logger.info(f"Found image URL: {image_url}")
+           # logger.info(f"Found image URL: {image_url}")
         else:
             logger.warning(f"No valid image URL found in attachment: {attachment}")
-    
+    #logger.info(f"Found in total {len(image_url)}image URLS ")
     return image_urls
 
 def process_listing_images(listing):

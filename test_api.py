@@ -276,7 +276,7 @@ def main():
     print()
     
     start_time = time.time()
-    success = test_upload_images_endpoint(sample_data)
+    success = test_from_file_json()# test_upload_images_endpoint(sample_data)
     end_time = time.time()
     
     print()
