@@ -10,26 +10,28 @@ def filter_json_object(obj: dict, allowed_keys: list[str]) -> dict:
     """
     return {k: v for k, v in obj.items() if k in allowed_keys}
 
-# Step 1: Load the JSON file
-with open(SAMPLE_DATA_FILE, "r") as infile:
-    data = json.load(infile)
 
-# Step 2: Define which keys to keep
-allowed_keys = ["text", "user", "processed_images", "price", "location"]
+def clean_college_lisitings(input):
+    # Step 1: Load the JSON file
+    with open(f"uploadFiles/{input}_uploaded.json", "r") as infile:
+        data = json.load(infile)
+    output = f"cleanedCollegeListings/{input}.json"
+    # Step 2: Define which keys to keep
+    allowed_keys = ["text", "user", "processed_images", "price", "location"]
 
-# Step 3: Apply the filter
-if isinstance(data, list):
-    # For a list of JSON objects
-    filtered_data = [filter_json_object(obj, allowed_keys) for obj in data]
-else:
-    # For a single JSON object
-    filtered_data = filter_json_object(data, allowed_keys)
+    # Step 3: Apply the filter
+    if isinstance(data, list):
+        # For a list of JSON objects
+        filtered_data = [filter_json_object(obj, allowed_keys) for obj in data]
+    else:
+        # For a single JSON object
+        filtered_data = filter_json_object(data, allowed_keys)
 
-# Step 4: Save the result back to a new file
-with open("removed_irrelevant_keys_output.json", "w") as outfile:
-    json.dump(filtered_data, outfile, indent=4)
+    # Step 4: Save the result back to a new file
+    with open(output, "w") as outfile:
+        json.dump(filtered_data, outfile, indent=4)
 
-print("Filtered JSON saved to filtered_output.json")
+    print("Filtered JSON saved to filtered_output.json")
 
 
 
