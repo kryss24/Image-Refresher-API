@@ -1,6 +1,26 @@
+import faiss
+import numpy as np
+import requests
+import sqlite3
+from insertion import get_or_create_index, dim # Assuming dim is defined here
+
 def search(conn, query, max_price=None, min_beds=None, top_k=5):
-    # Hard filters in SQLite
-    sql = "SELECT id, text FROM listings WHERE 1=1"
+    # Step 1: Perform the full FAISS search first
+    index = get_or_create_index()
+    
+    # Embed the query
+    resp = requests.post("http://localhost:5000/embed", json={"text": query})
+    query_vec = np.array(resp.json()["embedding"], dtype="float32").reshape(1, -1)
+    
+    # Search the full FAISS index for a larger number of candidates
+    # We retrieve more than top_k to account for filtering
+    # For example, search for 20 candidates and then filter down to the best 5
+    search_k = top_k * 5
+    D, I = index.search(query_vec, search_k)
+
+    # Step 2: Retrieve the ID-text pairs for filtering
+    # Get the raw candidate data from the database using the hard filters
+    sql = "SELECT id FROM listings WHERE 1=1"
     params = []
     if max_price:
         sql += " AND price_min <= ?"
@@ -11,26 +31,19 @@ def search(conn, query, max_price=None, min_beds=None, top_k=5):
 
     cur = conn.cursor()
     cur.execute(sql, params)
-    candidates = cur.fetchall()
+    
+    # Convert candidates from a list of tuples to a set for fast lookups
+    valid_ids = {row[0] for row in cur.fetchall()}
 
-    if not candidates:
-        return []
-
-    # Embed query
-    resp = requests.post("http://localhost:5000/embed", json={"text": query})
-    query_vec = np.array(resp.json()["embedding"], dtype="float32").reshape(1, -1)
-
-    # Restrict FAISS search to candidate IDs
-    candidate_ids = np.array([c[0] for c in candidates], dtype="int64")
-    candidate_vecs = index.reconstruct_n(0, index.ntotal)  # Get all vectors
-    sub_index = faiss.IndexIDMap(faiss.IndexFlatL2(dim))
-    sub_index.add_with_ids(candidate_vecs, candidate_ids)
-
-    D, I = sub_index.search(query_vec, top_k)
-
+    # Step 3: Post-filter the FAISS results
     results = []
     for dist, idx in zip(D[0], I[0]):
-        cur.execute("SELECT * FROM listings WHERE id=?", (int(idx),))
-        results.append({"distance": float(dist), "listing": cur.fetchone()})
+        # Check if the FAISS result ID is in our list of valid database candidates
+        if idx in valid_ids:
+            cur.execute("SELECT * FROM listings WHERE id=?", (int(idx),))
+            results.append({"distance": float(dist), "listing": cur.fetchone()})
+            if len(results) >= top_k:
+                break # Stop once we have our desired number of results
 
     return results
+

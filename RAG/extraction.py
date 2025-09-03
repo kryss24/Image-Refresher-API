@@ -1,25 +1,51 @@
+import json
 import re
 
+
+
+def extract_location(text):
+    # 1. Full street address
+    address_match = re.search(r'\d{1,5}\s[\w\s]+,\s*\w+,\s*[A-Z]{2}\s*\d{5}', text)
+    if address_match:
+        return address_match.group(0)
+
+    # 2. Apartment / Complex names (capitalized words with optional "The")
+    complex_match = re.search(r'(?:The\s)?[A-Z][A-Za-z0-9&\-\']+(?:\s[A-Z][A-Za-z0-9&\-\']+){0,4}', text)
+    if complex_match:
+        return complex_match.group(0)
+
+    # 3. City / University mentions
+    city_uni_match = re.search(r'(Tallahassee|Athens|Tampa|College Town|FSU|UGA|USF)', text, re.IGNORECASE)
+    if city_uni_match:
+        return city_uni_match.group(0)
+
+    return None
+
 def extract_metadata(text):
-    # Price
-    price_matches = re.findall(r"\$?(\d{3,4})", text)
-    price_min = min(map(int, price_matches)) if price_matches else None
-    price_max = max(map(int, price_matches)) if price_matches else None
+    bedrooms, bathrooms, location, min_price, max_price = None, None, None, None, None
 
-    # Beds/Baths
-    beds = None
-    baths = None
-    bed_match = re.search(r"(\d+)\s*bed", text.lower())
-    bath_match = re.search(r"(\d+)\s*bath", text.lower())
-    if bed_match:
-        beds = int(bed_match.group(1))
-    if bath_match:
-        baths = int(bath_match.group(1))
+    # Bedrooms
+    br_match = re.search(r'(\d+)\s*(?:BR|Bed|Beds|Bedroom|Bedrooms)', text, re.IGNORECASE)
+    if br_match:
+        bedrooms = int(br_match.group(1))
 
-    # Location (very rough: look for "Athens", "UGA", etc.)
-    location = None
-    loc_match = re.search(r"Athens, GA|UGA|Downtown", text, re.IGNORECASE)
-    if loc_match:
-        location = loc_match.group(0)
+    # Bathrooms
+    ba_match = re.search(r'(\d+(\.\d+)?)\s*(?:BA|Bath|Baths|Bathroom|Bathrooms)', text, re.IGNORECASE)
+    if ba_match:
+        bathrooms = float(ba_match.group(1))
 
-    return price_min, price_max, beds, baths, location
+    # Location extraction
+    location = extract_location(text)
+
+    # Prices
+    prices = re.findall(r'\$([0-9]+(?:,[0-9]{3})*(?:\.\d{1,2})?)', text)
+    prices = [float(p.replace(",", "")) for p in prices]
+    if prices:
+        if len(prices) == 1:
+            min_price = 0
+            max_price = prices[0]
+        else:
+            min_price = min(prices)
+            max_price = max(prices)
+
+    return  min_price, max_price,bedrooms, bathrooms, location
